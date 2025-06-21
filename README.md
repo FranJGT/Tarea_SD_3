@@ -30,8 +30,15 @@ T3_SD/
 ├── config.json          # Configuración de nodos
 ├── test_runner.sh       # Script de pruebas automatizadas
 ├── README.md           # Documentación del proyecto
-└── node_X_state.json   # Archivos de estado (generados automáticamente)
+└── nodo_X.json         # Archivos de estado (generados automáticamente)
 ```
+
+### Formato de Archivos de Estado
+
+Cada nodo persiste su estado en un archivo con el formato `nodo_X.json`, donde `X` es el ID del nodo. Por ejemplo:
+- `nodo_1.json` - Estado del nodo 1
+- `nodo_2.json` - Estado del nodo 2  
+- `nodo_3.json` - Estado del nodo 3
 
 ## Instalación y Configuración
 
@@ -272,6 +279,19 @@ Para contribuir al proyecto:
 ## Licencia
 
 Este proyecto es para fines educativos y de investigación en sistemas distribuidos.
+
+## Equipo de Desarrollo
+
+### Integrantes del Proyecto
+
+**Nombre del Estudiante**  
+*Rol: Desarrollador Principal*  
+- Implementación del Algoritmo del Matón
+- Desarrollo del sistema de replicación
+- Configuración de la API REST
+- Documentación técnica
+
+*Nota: Por favor, actualiza esta sección con los nombres reales y roles específicos de los integrantes de tu equipo.*
 
 ## Autor
 

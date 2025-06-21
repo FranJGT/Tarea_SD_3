@@ -41,7 +41,7 @@ cleanup() {
     sleep 2
     
     # Eliminar archivos de estado
-    rm -f node_*_state.json
+    rm -f nodo_*.json
     
     print_success "Entorno limpiado"
 }

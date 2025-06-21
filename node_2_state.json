@@ -1,5 +1,5 @@
 {
-  "sequence_number": 3,
+  "sequence_number": 6,
   "event_log": [
     {
       "id": 1,
@@ -11,6 +11,18 @@
     },
     {
       "id": 3,
+      "value": "Evento después de la recuperación"
+    },
+    {
+      "id": 4,
+      "value": "Evento inicial del sistema"
+    },
+    {
+      "id": 5,
+      "value": "Evento después del fallo del primario"
+    },
+    {
+      "id": 6,
       "value": "Evento después de la recuperación"
     }
   ]

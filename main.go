@@ -109,7 +109,7 @@ func NewServerNode(configPath string, nodeID int) (*ServerNode, error) {
 
 // loadState carga el estado desde el archivo persistente
 func (sn *ServerNode) loadState() {
-	filename := fmt.Sprintf("node_%d_state.json", sn.nodeID)
+	filename := fmt.Sprintf("nodo_%d.json", sn.nodeID)
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		log.Printf("No se encontró archivo de estado previo para nodo %d, iniciando con estado vacío", sn.nodeID)
@@ -135,7 +135,7 @@ func (sn *ServerNode) saveState() error {
 		return fmt.Errorf("error serializando estado: %v", err)
 	}
 
-	filename := fmt.Sprintf("node_%d_state.json", sn.nodeID)
+	filename := fmt.Sprintf("nodo_%d.json", sn.nodeID)
 	if err := os.WriteFile(filename, data, 0644); err != nil {
 		return fmt.Errorf("error guardando estado: %v", err)
 	}
@@ -193,6 +193,11 @@ func (sn *ServerNode) startInitialElection() {
 }
 
 // startElection inicia el proceso de elección del matón
+// Este método implementa el algoritmo del matón (Bully Algorithm):
+// 1. Busca nodos con ID superior al actual
+// 2. Envía mensajes de elección a esos nodos
+// 3. Si ningún nodo superior responde, se convierte en primario
+// 4. Si un nodo superior responde, ese nodo inicia su propia elección
 func (sn *ServerNode) startElection() {
 	log.Printf("Nodo %d iniciando elección", sn.nodeID)
 
@@ -228,6 +233,8 @@ func (sn *ServerNode) startElection() {
 }
 
 // sendElectionMessage envía un mensaje de elección a un nodo específico
+// Retorna true si el nodo respondió exitosamente, false en caso contrario
+// Este método es parte del algoritmo del matón para determinar si hay nodos superiores activos
 func (sn *ServerNode) sendElectionMessage(targetNodeID int) bool {
 	url := sn.getNodeURL(targetNodeID) + "/election"
 
@@ -248,6 +255,10 @@ func (sn *ServerNode) sendElectionMessage(targetNodeID int) bool {
 }
 
 // becomePrimary convierte este nodo en primario
+// Este método:
+// 1. Actualiza el estado interno del nodo para marcarlo como primario
+// 2. Anuncia la victoria de la elección a todos los demás nodos
+// 3. Inicia el monitoreo de nodos secundarios (aunque en esta implementación es mínimo)
 func (sn *ServerNode) becomePrimary() {
 	sn.primaryMutex.Lock()
 	sn.isPrimary = true
@@ -264,6 +275,8 @@ func (sn *ServerNode) becomePrimary() {
 }
 
 // announceVictory anuncia la victoria de la elección a todos los demás nodos
+// Envía mensajes de coordinador a todos los nodos excepto a sí mismo
+// Esto es parte del protocolo del algoritmo del matón para informar a todos sobre el nuevo líder
 func (sn *ServerNode) announceVictory() {
 	for _, node := range sn.config.Nodes {
 		if node.ID != sn.nodeID {
@@ -273,6 +286,8 @@ func (sn *ServerNode) announceVictory() {
 }
 
 // sendCoordinatorMessage envía mensaje de coordinador a un nodo específico
+// Informa al nodo objetivo que este nodo es el nuevo primario
+// El nodo objetivo actualizará su estado para reconocer al nuevo coordinador
 func (sn *ServerNode) sendCoordinatorMessage(targetNodeID int) {
 	url := sn.getNodeURL(targetNodeID) + "/coordinator"
 
@@ -302,6 +317,10 @@ func (sn *ServerNode) startSecondaryMonitoring() {
 }
 
 // startPrimaryMonitoring inicia el monitoreo del primario (solo para secundarios)
+// Este método ejecuta un bucle infinito que:
+// 1. Envía heartbeats periódicos al primario cada 2 segundos
+// 2. Si no recibe respuesta, asume que el primario ha fallado
+// 3. Inicia una nueva elección cuando detecta el fallo
 func (sn *ServerNode) startPrimaryMonitoring() {
 	sn.heartbeatTicker = time.NewTicker(2 * time.Second)
 	defer sn.heartbeatTicker.Stop()
@@ -319,6 +338,9 @@ func (sn *ServerNode) startPrimaryMonitoring() {
 }
 
 // checkPrimaryHeartbeat verifica si el primario está vivo
+// Envía una petición HTTP GET al endpoint /heartbeat del primario
+// Si no recibe respuesta o recibe un error, asume que el primario ha fallado
+// y llama a handlePrimaryFailure para iniciar una nueva elección
 func (sn *ServerNode) checkPrimaryHeartbeat() {
 	sn.primaryMutex.RLock()
 	primaryID := sn.primaryID
@@ -346,6 +368,10 @@ func (sn *ServerNode) checkPrimaryHeartbeat() {
 }
 
 // handlePrimaryFailure maneja la detección de fallo del primario
+// Este método:
+// 1. Limpia el estado interno del nodo (ya no hay primario)
+// 2. Inicia una nueva elección para elegir un nuevo líder
+// Es llamado cuando un nodo secundario detecta que el primario no responde
 func (sn *ServerNode) handlePrimaryFailure() {
 	log.Printf("Nodo %d detectó fallo del primario, iniciando elección", sn.nodeID)
 
@@ -583,6 +609,11 @@ func (sn *ServerNode) handleStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 // replicateToAll replica un evento a todos los nodos secundarios
+// Este método implementa replicación síncrona:
+// 1. Envía el evento a todos los nodos excepto a sí mismo
+// 2. Espera confirmación de todos los nodos
+// 3. Retorna true solo si todos los nodos confirmaron exitosamente
+// 4. Retorna false si al menos un nodo falló en la replicación
 func (sn *ServerNode) replicateToAll(event Event) bool {
 	var wg sync.WaitGroup
 	successChan := make(chan bool, len(sn.config.Nodes))
@@ -612,6 +643,8 @@ func (sn *ServerNode) replicateToAll(event Event) bool {
 }
 
 // replicateToNode replica un evento a un nodo específico
+// Envía una petición HTTP POST con el evento al endpoint /replicate del nodo objetivo
+// Retorna true si la replicación fue exitosa, false en caso contrario
 func (sn *ServerNode) replicateToNode(targetNodeID int, event Event) bool {
 	url := sn.getNodeURL(targetNodeID) + "/replicate"
 
@@ -633,6 +666,11 @@ func (sn *ServerNode) replicateToNode(targetNodeID int, event Event) bool {
 }
 
 // syncWithPrimary sincroniza el estado con el primario
+// Este método es usado por nodos que se reintegran al sistema:
+// 1. Contacta al primario actual
+// 2. Solicita el estado completo
+// 3. Sobrescribe su estado local con la información del primario
+// 4. Guarda el estado sincronizado en el archivo local
 func (sn *ServerNode) syncWithPrimary() error {
 	sn.primaryMutex.RLock()
 	primaryID := sn.primaryID
