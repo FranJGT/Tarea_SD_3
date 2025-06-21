@@ -1,0 +1,14 @@
+2025/06/20 23:57:25 No se encontró archivo de estado previo para nodo 2, iniciando con estado vacío
+2025/06/20 23:57:25 Nodo 2 iniciando en localhost:8082
+2025/06/20 23:57:27 Nodo 2 iniciando elección inicial
+2025/06/20 23:57:27 Nodo 2 iniciando elección
+2025/06/20 23:57:27 Nodo 2 no pudo contactar al nodo 3: Get "http://localhost:8083/election": dial tcp [::1]:8083: connect: connection refused
+2025/06/20 23:57:27 Nodo 2 se convierte en primario (no hay nodos superiores disponibles)
+2025/06/20 23:57:27 Nodo 2 es ahora el PRIMARIO
+2025/06/20 23:57:27 Error enviando mensaje de coordinador al nodo 3: Post "http://localhost:8083/coordinator": dial tcp [::1]:8083: connect: connection refused
+2025/06/20 23:57:27 Nodo 1 confirmó coordinador 2
+2025/06/20 23:57:30 Nodo 2 reconoce al nodo 3 como primario
+2025/06/20 23:57:42 Nodo 2 replicó evento: {ID:1 Value:Evento inicial del sistema}
+2025/06/20 23:57:44 Nodo 2 replicó evento: {ID:2 Value:Evento después del fallo del primario}
+2025/06/20 23:57:46 Nodo 2 reconoce al nodo 3 como primario
+2025/06/20 23:57:59 Nodo 2 replicó evento: {ID:3 Value:Evento después de la recuperación}
